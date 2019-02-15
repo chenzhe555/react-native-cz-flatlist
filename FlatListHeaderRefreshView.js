@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { CZFlatListViewPullStatus } from './enum';
+import { CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus } from './enum';
 
 export default class FlatListHeaderRefreshView extends Component{
 
@@ -25,73 +25,43 @@ export default class FlatListHeaderRefreshView extends Component{
     * */
     initializeParams() {
         this.state = {
-            show: false,
-            height: 0,
-            contentText: '',
-            animating: false
+            resultStatus: CZFlatListViewHeaderViewStatus.Initialization
         };
     }
 
+    /************************** 子组件回调方法 **************************/
+    /************************** 外部调用方法 **************************/
     /*
     * 更新偏移量Y值
     * */
     updateContentOffsetY(offsetY) {
-        if (!this.isUpdating && this.pullStatus != CZFlatListViewPullStatus.PullDownLoadData) {
-            this.isUpdating = true;
-            //显示文本信息
-            let contentText = '';
-            //菊花是否转动
-            let animating = true;
-            //是否显示
-            let show = true;
-            if (offsetY >= 10 && offsetY <= 36) {
-                contentText = '下拉刷新';
-                this.pullStatus = CZFlatListViewPullStatus.None;
+        if (this.pullStatus != CZFlatListViewPullStatus.PullDownLoadData) {
+            let status;
+            this.pullStatus = CZFlatListViewPullStatus.None;
+            if (offsetY >= 10 && offsetY <= 40) {
+                status = CZFlatListViewHeaderViewStatus.ContinePull;
             } else if (offsetY > 40) {
-                contentText = '松开刷新数据';
+                status = CZFlatListViewHeaderViewStatus.PullGoToLoad;
                 this.pullStatus = CZFlatListViewPullStatus.PullDown;
             } else {
-                contentText = '';
-                animating = false;
-                this.pullStatus = CZFlatListViewPullStatus.None;
-                show = false;
+                status = CZFlatListViewHeaderViewStatus.Initialization;
             }
-
             this.setState({
-                show: show,
                 height: offsetY,
-                contentText: contentText,
-                animating: animating
-            }, () => {
-                this.isUpdating = false;
+                resultStatus: status
             });
         }
     }
 
     /*
-    * 下拉加载数据中
-    * */
-    loadData = () => {
-        this.pullStatus = CZFlatListViewPullStatus.PullDownLoadData;
-        this.setState({
-            contentText: '正在刷新数据...',
-            height: 30
-        });
-    }
-    /************************** 子组件回调方法 **************************/
-    /************************** 外部调用方法 **************************/
-    /*
     * 重置组件状态
     * */
     resetStatus = () => {
-        //是否正在更新组件
-        this.isUpdating = false;
         //初始化状态
         this.pullStatus = CZFlatListViewPullStatus.None;
         if (this.isDidMounted) {
             this.setState({
-                show: false,
-                height: 0
+                resultStatus: CZFlatListViewHeaderViewStatus.Initialization
             });
         }
     }
@@ -102,16 +72,65 @@ export default class FlatListHeaderRefreshView extends Component{
     getCurrentStatus = () => {
         return this.pullStatus;
     }
+
+    /*
+    * 下拉加载数据中
+    * */
+    loadData = () => {
+        this.pullStatus = CZFlatListViewPullStatus.PullDownLoadData;
+        this.setState({
+            resultStatus: CZFlatListViewHeaderViewStatus.LoadingData
+        });
+    }
+
+    /*
+    * 数据加载失败
+    * */
+    loadFail = () => {
+        //初始化状态
+        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.setState({
+            resultStatus: CZFlatListViewHeaderViewStatus.Fail
+        });
+    }
     /************************** List相关方法 **************************/
     /************************** Render中方法 **************************/
     render() {
-        const { height, contentText, animating, show } = this.state;
-        if (!show) return null;
+        let height = this.state.height;
+        const { resultStatus } = this.state;
+        if (resultStatus == CZFlatListViewHeaderViewStatus.Initialization || resultStatus == CZFlatListViewHeaderViewStatus.All) return null;
+
+        let animating = true;
+        let contentText = '';
+        if (resultStatus == CZFlatListViewHeaderViewStatus.ContinePull) {
+            contentText = '下拉刷新';
+        } else if (resultStatus == CZFlatListViewHeaderViewStatus.PullGoToLoad) {
+            contentText = '松开刷新数据';
+        } else if (resultStatus == CZFlatListViewHeaderViewStatus.LoadingData) {
+            contentText = '正在刷新数据...';
+            height = 30;
+        } else if (resultStatus == CZFlatListViewHeaderViewStatus.Fail) {
+            animating = false;
+            contentText = '数据加载失败，请重试';
+            height = 30;
+            //1秒后自动消失
+            setTimeout( () => {
+                if (this.state.resultStatus == CZFlatListViewHeaderViewStatus.Fail) {
+                    this.setState({
+                        resultStatus: CZFlatListViewHeaderViewStatus.Initialization
+                    });
+                }
+            }, 1000);
+        }
 
         return (
-            <View style={[styles.MainView, {height: show ? height : 0}]}>
+            <View style={[styles.MainView, {height: height}]}>
                 <View style={[styles.ContentView]}>
-                    <ActivityIndicator animating={animating} hidesWhenStopped={true}></ActivityIndicator>
+                    {
+                        animating ? (
+                            <ActivityIndicator></ActivityIndicator>
+                        ) : null
+                    }
                     <Text style={[styles.TextView]}>{contentText}</Text>
                 </View>
             </View>
