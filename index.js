@@ -2,13 +2,16 @@ import React, { Component } from 'react';
 import { View, Text, StyleSheet, FlatList, PanResponder } from 'react-native';
 import FlatListHeaderRefreshView from './FlatListHeaderRefreshView';
 import FlatListFooterRefreshView from './FlatListFooterRefreshView';
-import { CZFlatListViewPullStatus, CZFlatListViewFooterViewStatus } from './enum';
+import { CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus } from './enum';
 
 /*
+* props:
+* pageCount: 每页数量，默认20,是否加载完按照传入数量判断，如果数量不等于pageCount，则认为加载完
+* 
+* func:
 * renderItem: 渲染Cell
 * refresh: 下拉刷新数据
 * loadMore: 上拉加载数据
-* pageCount: 每页数量，默认20
 * */
 export default class CZFlatListView extends Component{
 
@@ -21,7 +24,8 @@ export default class CZFlatListView extends Component{
 
     componentDidMount = () => {
         //先刷新数据
-        if (this.props.refresh) this.props.refresh(this._refresh);
+        if (this.props.evaluateView) this.props.evaluateView(this);
+        this.pullDownFunc();
     }
     /************************** 继承方法 **************************/
     /************************** 通知 **************************/
@@ -35,10 +39,11 @@ export default class CZFlatListView extends Component{
         this.state = {
             list: []
         };
-        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         //底部视图当前状态值，用于数据加载完后不再请求数据
         this.footerResultStatus = CZFlatListViewFooterViewStatus.Initialization;
         this.pageCount = this.props.pageCount ? this.props.pageCount : 20;
+        this.endDragFlag = true;
     }
 
     /*
@@ -70,19 +75,12 @@ export default class CZFlatListView extends Component{
     * */
     notifyGestureEnd = () => {
         this.pullStatus = this.flatListHeaderRefreshView.getCurrentStatus();
-        if (this.pullStatus == CZFlatListViewPullStatus.PullDown || this.pullStatus == CZFlatListViewPullStatus.PullDownLoadData) {
-            if (this.pullStatus == CZFlatListViewPullStatus.PullDown) {
-                //FlatList偏移HeaderView高度
-                this.flatlist.scrollToOffset({offset: -30});
-                //下拉组件更改为正在请求数据
-                this.flatListHeaderRefreshView.loadData();
-                //请求数据
-                if (this.props.refresh) this.props.refresh(this._refresh);
-            }
+        if (this.pullStatus == CZFlatListViewHeaderViewStatus.PullGoToLoad) {
+            this.pullDownFunc();
         } else {
             //再判断是否是上拉加载更多数据
             this.pullStatus = this.flatListFooterRefreshView.getCurrentStatus();
-            if (this.pullStatus == CZFlatListViewPullStatus.PullUp) {
+            if (this.pullStatus == CZFlatListViewFooterViewStatus.PullGoToLoad) {
                 //上拉组件更改为正在请求数据
                 this.flatListFooterRefreshView.loadData();
                 if (this.props.loadMore) this.props.loadMore(this._loadMore);
@@ -91,6 +89,18 @@ export default class CZFlatListView extends Component{
                 this.flatListFooterRefreshView.resetStatus();
             }
         }
+    }
+
+    /*
+    * 下拉事件
+    * */
+    pullDownFunc = () => {
+        //FlatList偏移HeaderView高度
+        this.flatlist.scrollToOffset({offset: -30});
+        //下拉组件更改为正在请求数据
+        this.flatListHeaderRefreshView.loadData();
+        //请求数据
+        if (this.props.refresh) this.props.refresh(this._refresh);
     }
 
     /*
@@ -109,6 +119,7 @@ export default class CZFlatListView extends Component{
                 this.flatlist.scrollToOffset({offset: 0});
                 //下拉组件更改为初始状态
                 this.flatListHeaderRefreshView.resetStatus();
+                this.flatListFooterRefreshView.resetStatus();
                 this.updateFooterViewShowStatus(newList.length);
             });
         }
@@ -171,18 +182,20 @@ export default class CZFlatListView extends Component{
         if (this.endDragFlag) return;
 
         const { contentOffset } = event.nativeEvent;
+        let headerStatus = this.flatListHeaderRefreshView.getCurrentStatus();
+        let footerStatus = this.flatListFooterRefreshView.getCurrentStatus();
         if (contentOffset.y < 0) {
-            this.pullStatus = this.flatListHeaderRefreshView.getCurrentStatus();
-            //如果正在请求数据，则不再显示加载效果
-            if (this.pullStatus != CZFlatListViewPullStatus.PullDownLoadData) {
+            this.pullStatus = headerStatus;
+            //如果下拉正在请求数据，则不再显示加载效果
+            if (headerStatus != CZFlatListViewHeaderViewStatus.LoadingData && footerStatus != CZFlatListViewFooterViewStatus.LoadingData) {
                 //下拉刷新
                 this.flatListHeaderRefreshView.updateContentOffsetY(-contentOffset.y);
                 this.onScrollUpdateFooterView(event, 1);
             }
         } else {
-            //如果正在请求数据，则不再显示加载效果
-            this.pullStatus = this.flatListHeaderRefreshView.getCurrentStatus();
-            if (this.pullStatus != CZFlatListViewPullStatus.PullUpLoadData) {
+            //如果上拉正在请求数据，则不再显示加载效果
+            this.pullStatus = footerStatus;
+            if (headerStatus != CZFlatListViewHeaderViewStatus.LoadingData && footerStatus != CZFlatListViewFooterViewStatus.LoadingData) {
                 this.onScrollUpdateFooterView(event, 2);
             }
         }
@@ -190,6 +203,7 @@ export default class CZFlatListView extends Component{
 
     /*
     * 更新底部视图的位置坐标
+    * type: 1.下拉时底部组件的滚动事件 2.下拉时底部组件的滚动事件 3.数据加载完的情况 4.同2，4是指contentSizeHeight < totalHeight的情况
     * */
     onScrollUpdateFooterView = (event, type) => {
         //如果是上拉且数据已经加载完毕，则只更新坐标，不修改文本信息
@@ -206,6 +220,7 @@ export default class CZFlatListView extends Component{
                 this.flatListFooterRefreshView.updateContentOffsetY(type, downOffset, downOffset);
             }
         } else {
+            if (type == 2) type = 4;
             this.flatListFooterRefreshView.updateContentOffsetY(type, totalHeight - contentSizeHeight + contentOffset.y, contentOffset.y);
         }
     }
@@ -228,7 +243,8 @@ export default class CZFlatListView extends Component{
         //如果 _onContentSizeChange 先于 _onLayout调用执行，缓存记录再执行
         if (this.isOnLayoutExecute) {
             this.contentSizeHeight = height;
-            if (this.pullStatus == CZFlatListViewPullStatus.PullDown) {
+            if (this.pullStatus == CZFlatListViewHeaderViewStatus.LoadingData) {
+                //显示下拉刷新效果中
                 this.updateFooterViewDownLocation(30);
             } else {
                 this.updateFooterViewDownLocation(0);
@@ -238,6 +254,7 @@ export default class CZFlatListView extends Component{
             this.isCacheOnContentSizeChangeWidth = width;
             this.isCacheOnContentSizeChangeHeight = height;
         }
+        this.flatListFooterRefreshView.modifyShowStatus(this.footerResultStatus);
     }
 
     /*
@@ -252,7 +269,7 @@ export default class CZFlatListView extends Component{
     * */
     _onScrollEndDrag = () => {
         this.endDragFlag = true;
-        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         this.updateFooterViewDownLocation(0);
     }
 

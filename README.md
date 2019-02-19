@@ -1,45 +1,54 @@
+## Manual installation
 
-# react-native-cz-flatlist
-
-## Getting started
-
-`$ npm install react-native-cz-flatlist --save`
-
-### Mostly automatic installation
-
-`$ react-native link react-native-cz-flatlist`
-
-### Manual installation
-
-
-#### iOS
-
-1. In XCode, in the project navigator, right click `Libraries` ➜ `Add Files to [your project's name]`
-2. Go to `node_modules` ➜ `react-native-cz-flatlist` and add `RNCzFlatlist.xcodeproj`
-3. In XCode, in the project navigator, select your project. Add `libRNCzFlatlist.a` to your project's `Build Phases` ➜ `Link Binary With Libraries`
-4. Run your project (`Cmd+R`)<
-
-#### Android
-
-1. Open up `android/app/src/main/java/[...]/MainActivity.java`
-  - Add `import com.chenzhe.flatlist.RNCzFlatlistPackage;` to the imports at the top of the file
-  - Add `new RNCzFlatlistPackage()` to the list returned by the `getPackages()` method
-2. Append the following lines to `android/settings.gradle`:
-  	```
-  	include ':react-native-cz-flatlist'
-  	project(':react-native-cz-flatlist').projectDir = new File(rootProject.projectDir, 	'../node_modules/react-native-cz-flatlist/android')
-  	```
-3. Insert the following lines inside the dependencies block in `android/app/build.gradle`:
-  	```
-      compile project(':react-native-cz-flatlist')
-  	```
+npm install react-native-cz-flatlist --save
 
 
 ## Usage
-```javascript
-import RNCzFlatlist from 'react-native-cz-flatlist';
-
-// TODO: What to do with the module?
-RNCzFlatlist;
+###  1.引入组件
 ```
-  
+import FlatListView from 'react-native-cz-flatlist';
+
+<FlatListView 
+    renderItem={this._renderItem} 
+    refresh={this._refresh} 
+    loadMore={this._loadMore}
+/> 
+```
+
+###  2.属性:
+```
+pageCount: 每页数量，默认20,是否加载完按照传入数量判断，如果数量不等于pageCount，则认为加载完
+```
+###  3.属性方法:
+```
+evaluateView: 赋值当前视图对象
+```
+```
+renderItem: 渲染Cell
+```
+```
+refresh: 下拉刷新数据
+  _refresh = (callback) => {
+        this.page = 1;
+        InfoService.test({'page': this.page, 'count': this.count}).then( (res) => {
+            callback({'list': []});
+        }).catch( (error) => {
+
+        });
+
+    }
+```
+```
+loadMore: 上拉加载数据
+  _loadMore = (callback) => {
+        this.page++;
+        InfoService.test({'page': this.page, 'count': this.count}).then( (res) => {
+            callback({'list': []});
+        }).catch( (error) => {
+
+        });
+
+    }
+```
+
+###  4.供外部调用的方法:

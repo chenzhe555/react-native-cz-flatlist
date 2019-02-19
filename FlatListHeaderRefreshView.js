@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus } from './enum';
+import { CZFlatListViewHeaderViewStatus } from './enum';
 
 export default class FlatListHeaderRefreshView extends Component{
 
@@ -24,8 +24,9 @@ export default class FlatListHeaderRefreshView extends Component{
     * 初始化参数
     * */
     initializeParams() {
+        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         this.state = {
-            resultStatus: CZFlatListViewHeaderViewStatus.Initialization
+            resultStatus: this.pullStatus
         };
     }
 
@@ -35,20 +36,17 @@ export default class FlatListHeaderRefreshView extends Component{
     * 更新偏移量Y值
     * */
     updateContentOffsetY(offsetY) {
-        if (this.pullStatus != CZFlatListViewPullStatus.PullDownLoadData) {
-            let status;
-            this.pullStatus = CZFlatListViewPullStatus.None;
+        if (this.pullStatus != CZFlatListViewHeaderViewStatus.LoadingData) {
             if (offsetY >= 10 && offsetY <= 40) {
-                status = CZFlatListViewHeaderViewStatus.ContinePull;
+                this.pullStatus = CZFlatListViewHeaderViewStatus.ContinePull;
             } else if (offsetY > 40) {
-                status = CZFlatListViewHeaderViewStatus.PullGoToLoad;
-                this.pullStatus = CZFlatListViewPullStatus.PullDown;
+                this.pullStatus = CZFlatListViewHeaderViewStatus.PullGoToLoad;
             } else {
-                status = CZFlatListViewHeaderViewStatus.Initialization;
+                this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
             }
             this.setState({
                 height: offsetY,
-                resultStatus: status
+                resultStatus: this.pullStatus
             });
         }
     }
@@ -58,10 +56,10 @@ export default class FlatListHeaderRefreshView extends Component{
     * */
     resetStatus = () => {
         //初始化状态
-        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         if (this.isDidMounted) {
             this.setState({
-                resultStatus: CZFlatListViewHeaderViewStatus.Initialization
+                resultStatus: this.pullStatus
             });
         }
     }
@@ -77,9 +75,9 @@ export default class FlatListHeaderRefreshView extends Component{
     * 下拉加载数据中
     * */
     loadData = () => {
-        this.pullStatus = CZFlatListViewPullStatus.PullDownLoadData;
+        this.pullStatus = CZFlatListViewHeaderViewStatus.LoadingData;
         this.setState({
-            resultStatus: CZFlatListViewHeaderViewStatus.LoadingData
+            resultStatus: this.pullStatus
         });
     }
 
@@ -88,9 +86,9 @@ export default class FlatListHeaderRefreshView extends Component{
     * */
     loadFail = () => {
         //初始化状态
-        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         this.setState({
-            resultStatus: CZFlatListViewHeaderViewStatus.Fail
+            resultStatus: this.pullStatus
         });
     }
     /************************** List相关方法 **************************/

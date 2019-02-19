@@ -23,9 +23,14 @@ export default class FlatListFooterRefreshView extends Component{
     * 初始化参数
     * */
     initializeParams() {
+        this.pullStatus = CZFlatListViewFooterViewStatus.Initialization;
+        //记录滚动前的状态，以便结束滚动后回复状态
+        this.originStatus = CZFlatListViewFooterViewStatus.Initialization;
         this.state = {
             height: 0,
-            resultStatus: CZFlatListViewFooterViewStatus.Initialization
+            resultStatus: this.pullStatus,
+            show: false,
+            type: 1
         }
     }
     /************************** 子组件回调方法 **************************/
@@ -35,11 +40,14 @@ export default class FlatListFooterRefreshView extends Component{
     * */
     resetStatus = () => {
         //初始化状态
-        this.pullStatus = CZFlatListViewPullStatus.None;
-        const { resultStatus } = this.state;
-        this.setState({
-            resultStatus: resultStatus
-        });
+        if (this.pullStatus != CZFlatListViewFooterViewStatus.LoadingData) {
+            this.pullStatus = CZFlatListViewFooterViewStatus.Initialization;
+            const { resultStatus } = this.state;
+            this.setState({
+                resultStatus: this.originStatus,
+                show: true
+            });
+        }
     }
 
     /*
@@ -48,28 +56,36 @@ export default class FlatListFooterRefreshView extends Component{
     * offsetY: Footer高度
     * */
     updateContentOffsetY(type = 1, height, offsetY) {
-        this.pullStatus = CZFlatListViewPullStatus.None;
         if (type == 1) {
             this.setState({
-                height: height
+                height: height,
+                show: true
             });
-        } else if (type == 2) {
-            let status;
-            if (offsetY > 40) {
-                status = CZFlatListViewFooterViewStatus.PullGoToLoad;
-                this.pullStatus = CZFlatListViewPullStatus.PullUp;
-            } else {
-                status = CZFlatListViewFooterViewStatus.ContinePull;
-            }
+        } else if (type == 2 || type == 4) {
+            if (this.pullStatus != CZFlatListViewFooterViewStatus.LoadingData) {
+                //记录上次状态
+                if (this.pullStatus != CZFlatListViewFooterViewStatus.PullGoToLoad &&  this.pullStatus != CZFlatListViewFooterViewStatus.ContinePull) {
+                    this.originStatus = this.pullStatus;
+                }
+                if (offsetY > 36) {
+                    this.pullStatus = CZFlatListViewFooterViewStatus.PullGoToLoad;
+                } else {
+                    this.pullStatus = CZFlatListViewFooterViewStatus.ContinePull;
+                }
 
-            this.setState({
-                height: height,
-                resultStatus: status
-            });
+                this.setState({
+                    height: height,
+                    resultStatus: this.pullStatus,
+                    show: true,
+                    type: type
+                });
+            }
         } else if (type == 3) {
+            this.pullStatus = CZFlatListViewFooterViewStatus.All;
             this.setState({
                 height: height,
-                resultStatus: CZFlatListViewFooterViewStatus.All
+                resultStatus: this.pullStatus,
+                show: true
             });
         }
     }
@@ -90,8 +106,9 @@ export default class FlatListFooterRefreshView extends Component{
                 height: value
             });
         } else if (status == CZFlatListViewFooterViewStatus.More || status == CZFlatListViewFooterViewStatus.All) {
+            this.pullStatus = status;
             this.setState({
-                resultStatus: status
+                resultStatus: this.pullStatus
             });
         }
     }
@@ -100,9 +117,9 @@ export default class FlatListFooterRefreshView extends Component{
     * 上拉加载更多数据中
     * */
     loadData = () => {
-        this.pullStatus = CZFlatListViewPullStatus.PullUpLoadData;
+        this.pullStatus = CZFlatListViewFooterViewStatus.LoadingData;
         this.setState({
-            resultStatus: CZFlatListViewFooterViewStatus.LoadingData
+            resultStatus: this.pullStatus
         });
     }
 
@@ -111,18 +128,21 @@ export default class FlatListFooterRefreshView extends Component{
     * */
     loadFail = () => {
         //初始化状态
-        this.pullStatus = CZFlatListViewPullStatus.None;
+        this.pullStatus = CZFlatListViewFooterViewStatus.Fail;
         this.setState({
-            resultStatus: CZFlatListViewFooterViewStatus.Fail
+            resultStatus: this.pullStatus
         });
     }
     /************************** List相关方法 **************************/
     /************************** Render中方法 **************************/
     render() {
-        const { height, resultStatus } = this.state;
+        const { resultStatus, show, type } = this.state;
+        if (!show) return null;
 
         let animating = false;
         let contentText = '';
+        let height = this.state.height;
+
         if (resultStatus == CZFlatListViewFooterViewStatus.Initialization) {
             contentText = '上拉或下拉加载数据';
         } else if (resultStatus == CZFlatListViewFooterViewStatus.ContinePull) {
@@ -133,6 +153,7 @@ export default class FlatListFooterRefreshView extends Component{
             contentText = '松手即可加载数据...';
         } else if (resultStatus == CZFlatListViewFooterViewStatus.LoadingData) {
             animating = true;
+            if (type != 4) height = 36;
             contentText = '正在加载更多数据...';
         } else if (resultStatus == CZFlatListViewFooterViewStatus.More) {
             contentText = '上拉加载更多';
