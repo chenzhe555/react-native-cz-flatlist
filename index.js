@@ -189,7 +189,7 @@ export default class CZFlatListView extends Component{
             //如果下拉正在请求数据，则不再显示加载效果
             if (headerStatus != CZFlatListViewHeaderViewStatus.LoadingData && footerStatus != CZFlatListViewFooterViewStatus.LoadingData) {
                 //下拉刷新
-                this.flatListHeaderRefreshView.updateContentOffsetY(-contentOffset.y);
+                if(this.flatListHeaderRefreshView) this.flatListHeaderRefreshView.updateContentOffsetY(-contentOffset.y);
                 this.onScrollUpdateFooterView(event, 1);
             }
         } else {
@@ -217,11 +217,11 @@ export default class CZFlatListView extends Component{
         if (contentSizeHeight >= totalHeight) {
             downOffset = contentOffset.y + totalHeight - contentSizeHeight;
             if (downOffset > 0) {
-                this.flatListFooterRefreshView.updateContentOffsetY(type, downOffset, downOffset);
+                if(this.flatListFooterRefreshView) this.flatListFooterRefreshView.updateContentOffsetY(type, downOffset, downOffset);
             }
         } else {
             if (type == 2) type = 4;
-            this.flatListFooterRefreshView.updateContentOffsetY(type, totalHeight - contentSizeHeight + contentOffset.y, contentOffset.y);
+            if(this.flatListFooterRefreshView) this.flatListFooterRefreshView.updateContentOffsetY(type, totalHeight - contentSizeHeight + contentOffset.y, contentOffset.y);
         }
     }
     /************************** Render中方法 **************************/
