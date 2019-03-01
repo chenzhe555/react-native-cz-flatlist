@@ -8,12 +8,10 @@ export default class FlatListHeaderRefreshView extends Component{
     constructor(props) {
         super(props);
         this.initializeParams();
-        this.resetStatus();
     }
 
     componentDidMount() {
         if (this.props.evaluateView) this.props.evaluateView(this);
-        this.isDidMounted = true;
     }
     /************************** 继承方法 **************************/
     /************************** 通知 **************************/
@@ -24,60 +22,32 @@ export default class FlatListHeaderRefreshView extends Component{
     * 初始化参数
     * */
     initializeParams() {
-        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         this.state = {
-            resultStatus: this.pullStatus
+            resultStatus: CZFlatListViewHeaderViewStatus.Initialization,
+            show: false
         };
     }
 
     /************************** 子组件回调方法 **************************/
     /************************** 外部调用方法 **************************/
     /*
-    * 更新偏移量Y值
+    * 更新底部视图显示状态
     * */
-    updateContentOffsetY(offsetY) {
-        if (this.pullStatus != CZFlatListViewHeaderViewStatus.LoadingData) {
-            if (offsetY >= 10 && offsetY <= 40) {
-                this.pullStatus = CZFlatListViewHeaderViewStatus.ContinePull;
-            } else if (offsetY > 40) {
-                this.pullStatus = CZFlatListViewHeaderViewStatus.PullGoToLoad;
-            } else {
-                this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
-            }
-            this.setState({
-                height: offsetY,
-                resultStatus: this.pullStatus
-            });
-        }
-    }
-
-    /*
-    * 重置组件状态
-    * */
-    resetStatus = () => {
-        //初始化状态
-        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
-        if (this.isDidMounted) {
-            this.setState({
-                resultStatus: this.pullStatus
-            });
-        }
-    }
-
-    /*
-    * 获取当前状态
-    * */
-    getCurrentStatus = () => {
-        return this.pullStatus;
+    updateViewShowStatus = (show, status = CZFlatListViewHeaderViewStatus.Initialization, offsetY = 0) => {
+        this.setState({
+            show: show,
+            height: offsetY,
+            resultStatus: status
+        });
     }
 
     /*
     * 下拉加载数据中
     * */
     loadData = () => {
-        this.pullStatus = CZFlatListViewHeaderViewStatus.LoadingData;
         this.setState({
-            resultStatus: this.pullStatus
+            resultStatus: CZFlatListViewHeaderViewStatus.LoadingData,
+            show: true
         });
     }
 
@@ -86,17 +56,17 @@ export default class FlatListHeaderRefreshView extends Component{
     * */
     loadFail = () => {
         //初始化状态
-        this.pullStatus = CZFlatListViewHeaderViewStatus.Initialization;
         this.setState({
-            resultStatus: this.pullStatus
+            resultStatus: CZFlatListViewHeaderViewStatus.Fail,
+            show: true
         });
     }
     /************************** List相关方法 **************************/
     /************************** Render中方法 **************************/
     render() {
         let height = this.state.height;
-        const { resultStatus } = this.state;
-        if (resultStatus == CZFlatListViewHeaderViewStatus.Initialization || resultStatus == CZFlatListViewHeaderViewStatus.All) return null;
+        const { resultStatus, show } = this.state;
+        if (!show || resultStatus == CZFlatListViewHeaderViewStatus.Initialization || resultStatus == CZFlatListViewHeaderViewStatus.All) return null;
 
         let animating = true;
         let contentText = '';
@@ -115,8 +85,9 @@ export default class FlatListHeaderRefreshView extends Component{
             setTimeout( () => {
                 if (this.state.resultStatus == CZFlatListViewHeaderViewStatus.Fail) {
                     this.setState({
-                        resultStatus: CZFlatListViewHeaderViewStatus.Initialization
+                        show: false
                     });
+                    if (this.props.scrollToTop) this.props.scrollToTop();
                 }
             }, 1000);
         }
