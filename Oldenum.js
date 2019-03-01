@@ -1,19 +1,16 @@
-/*
-* 组件请求状态
-* */
-const CZFlatListViewRequestStatus = {
-    None: 1,                //没有在请求
-    PullDown: 2,            //下拉组件正在请求
-    PullUp: 3,              //上拉组件正在请求
-    RequestSuccess: 4,      //数据加载成功
-    RequestFail: 5          //数据加载失败
-}
-
 //FlatList组件Pull加载状态
 const CZFlatListViewPullStatus = {
     Initialization: 1,      //初始化状态
     PullDown: 2,            //下拉
     PullUp: 3               //上拉
+}
+
+//FlatList组件滚动状态
+const CZFlatListViewScrollStatus = {
+    None: 1,                //没有滚动
+    Scrolling: 2,           //正在滚动
+    EndDrag: 3,             //用户松开手指
+    EndScroll: 4            //ScrollView停止滚动
 }
 
 /*
@@ -24,7 +21,7 @@ const CZFlatListViewHeaderViewStatus = {
     ContinePull: 2,         //下拉加载
     PullGoToLoad: 3,        //松手开始下拉加载
     LoadingData: 4,         //正在请求数据
-    All: 5,                 //数据加载成功
+    All: 5,                 //已加载数据
     Fail: 6                 //数据加载失败
 }
 
@@ -43,8 +40,8 @@ const CZFlatListViewFooterViewStatus = {
 }
 
 export {
-    CZFlatListViewRequestStatus,
     CZFlatListViewPullStatus,
+    CZFlatListViewScrollStatus,
     CZFlatListViewHeaderViewStatus,
     CZFlatListViewFooterViewStatus
 }
