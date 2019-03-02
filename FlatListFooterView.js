@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { CZFlatListViewFooterViewStatus } from "./enum";
-import {CZFlatListViewHeaderViewStatus} from "react-native-cz-flatlist/enum";
 
 export default class FlatListFooterView extends Component{
 
@@ -34,12 +33,13 @@ export default class FlatListFooterView extends Component{
     /*
     * 获取偏移量
     * offsetY: 偏移量
+    * originStatus: 如果是正在请求，则保持组件状态
     * */
     updateContentOffsetY = (offsetY, originStatus = -1) => {
         const { bottomLoadContentOffset } = this.props;
         let status;
         if (offsetY > bottomLoadContentOffset) {
-            status = CZFlatListViewHeaderViewStatus.PullGoToLoad;
+            status = CZFlatListViewFooterViewStatus.PullGoToLoad;
         } else {
             status = CZFlatListViewFooterViewStatus.ContinePull;
         }

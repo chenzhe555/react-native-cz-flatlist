@@ -16,6 +16,14 @@ const CZFlatListViewPullStatus = {
     PullUp: 3               //上拉
 }
 
+//FlatList组件滚动状态
+const CZFlatListViewScrollStatus = {
+    None: 1,                //没有滚动
+    Scrolling: 2,           //正在滚动
+    EndDrag: 3,             //用户松开手指
+    EndScroll: 4            //ScrollView停止滚动
+}
+
 /*
 * 顶部视图加载枚举类型
 * */
@@ -45,6 +53,7 @@ const CZFlatListViewFooterViewStatus = {
 export {
     CZFlatListViewRequestStatus,
     CZFlatListViewPullStatus,
+    CZFlatListViewScrollStatus,
     CZFlatListViewHeaderViewStatus,
     CZFlatListViewFooterViewStatus
 }

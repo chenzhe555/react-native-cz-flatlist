@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, FlatList, PanResponder } from 'react-native';
-import { CZFlatListViewRequestStatus, CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus } from './enum';
+import { CZFlatListViewRequestStatus, CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus, CZFlatListViewScrollStatus } from './enum';
 import FlatListHeaderView from './FlatListHeaderView';
 import FlatListFooterView from './FlatListFooterView';
 
@@ -40,7 +40,9 @@ export default class CZFlatListView extends Component{
     * 初始化参数
     * */
     initializeParams = () => {
+        //顶部最大偏移量
         this.topLoadContentOffset = this.props.topLoadContentOffset ? this.props.topLoadContentOffset : 40;
+        //底部最大偏移量
         this.bottomLoadContentOffset = this.props.bottomLoadContentOffset ? this.props.bottomLoadContentOffset : 40;
         this.newListCount = -1;
         this.allListCount = -1;
@@ -51,6 +53,8 @@ export default class CZFlatListView extends Component{
         this.requestStatus = CZFlatListViewRequestStatus.None;
         //当前上/下拉组件状态
         this.pullStatus = CZFlatListViewPullStatus.Initialization;
+        //当前滚动状态
+        this.scrollStatus = CZFlatListViewScrollStatus.None;
         //每页数量
         this.pageCount = this.props.pageCount ? this.props.pageCount : 20;
         //底部组件状态
@@ -61,16 +65,12 @@ export default class CZFlatListView extends Component{
     * 下拉刷新
     * */
     _refresh = (result) => {
-        //结束下拉刷新
         this.flatListHeaderView.updateShowStatus(CZFlatListViewHeaderViewStatus.Initialization);
 
         //加载成功/失败
         let fail = result['fail'] ? result['fail'] : 0;
         if (fail) {
             this.loadFailAction();
-            setTimeout( () => {
-                this.flatListHeaderView.updateShowStatus(CZFlatListViewHeaderViewStatus.Fail);
-            }, 500);
         } else {
             this.requestStatus = CZFlatListViewRequestStatus.RequestSuccess;
             let list = result['list'] ? result['list'] : [];
@@ -79,7 +79,6 @@ export default class CZFlatListView extends Component{
                 list: list
             }, () => {
                 this.requestStatus = CZFlatListViewRequestStatus.None;
-                this.footerStatus = CZFlatListViewFooterViewStatus.Initialization;
                 this.flatlist.scrollToOffset({offset: 0});
                 this.updateFooterShowStatus();
             });
@@ -94,9 +93,6 @@ export default class CZFlatListView extends Component{
         let fail = result['fail'] ? result['fail'] : 0;
         if (fail) {
             this.loadFailAction();
-            setTimeout( () => {
-                this.flatListFooterView.updateShowStatus(CZFlatListViewFooterViewStatus.Fail);
-            }, 500);
         } else {
             this.requestStatus = CZFlatListViewRequestStatus.RequestSuccess;
             let originList = [].concat(this.state.list);
@@ -122,6 +118,9 @@ export default class CZFlatListView extends Component{
         this.requestStatus = CZFlatListViewRequestStatus.RequestFail;
     }
 
+    /*
+    * 更新底部组件显示状态
+    * */
     updateFooterShowStatus = () => {
         if (this.allListCount == -1) return;
 
@@ -134,7 +133,7 @@ export default class CZFlatListView extends Component{
                 this.footerStatus = CZFlatListViewFooterViewStatus.More;
             }
         }
-        this.flatListFooterView.updateShowStatus(this.requestStatus == CZFlatListViewFooterViewStatus.Fail ? CZFlatListViewFooterViewStatus.Fail : this.footerStatus);
+        this.flatListFooterView.updateShowStatus(this.footerStatus);
     }
     /************************** 子组件回调方法 **************************/
     /************************** 外部调用方法 **************************/
@@ -153,7 +152,6 @@ export default class CZFlatListView extends Component{
     _PullDownRefresh = () => {
         //如果正在请求，则不进行处理
         if (this.requestStatus == CZFlatListViewRequestStatus.PullDown || this.requestStatus == CZFlatListViewRequestStatus.PullUp) return;
-        console.log('下拉刷新');
 
         if (this.props.refresh) {
             this.requestStatus = CZFlatListViewRequestStatus.PullDown;
@@ -169,7 +167,6 @@ export default class CZFlatListView extends Component{
     _PullUpRefresh = () => {
         //如果正在请求，则不进行处理
         if (this.requestStatus == CZFlatListViewRequestStatus.PullDown || this.requestStatus == CZFlatListViewRequestStatus.PullUp) return;
-        console.log('上拉加载');
 
         if (this.props.loadMore) {
             this.requestStatus = CZFlatListViewRequestStatus.PullUp;
@@ -182,13 +179,14 @@ export default class CZFlatListView extends Component{
    * 下拉刷新，上拉加载判断逻辑
    * */
     _onScroll = (event) => {
+        if (this.scrollStatus == CZFlatListViewScrollStatus.EndDrag) return;
+
         //如果松开手后，ScrollView还会滑动一段距离，需要更新底部视图位置
         const { contentOffset } = event.nativeEvent;
         this.contentOffsetY = contentOffset.y;
 
         const { totalHeight, contentOffsetY, contentSizeHeight, footerStatus, requestStatus } = this;
         if (this.contentOffsetY < 0) {
-            this.updateFooterShowStatus();
             this.flatListHeaderView.updateContentOffsetY(-contentOffsetY, requestStatus == CZFlatListViewRequestStatus.PullDown ? CZFlatListViewHeaderViewStatus.LoadingData : -1);
         } else {
             if (footerStatus != CZFlatListViewFooterViewStatus.All) {
@@ -204,29 +202,49 @@ export default class CZFlatListView extends Component{
         }
     }
 
+    /*
+    * 手势开始滚动
+    * */
+    _onScrollBeginDrag = () => {
+        this.scrollStatus = CZFlatListViewScrollStatus.Scrolling;
+    }
+
+    /*
+    * 手势结束滚动
+    * */
     _onScrollEndDrag = () => {
         const { topLoadContentOffset, bottomLoadContentOffset, totalHeight, contentOffsetY, contentSizeHeight } = this;
 
+        this.scrollStatus = CZFlatListViewScrollStatus.EndDrag;
         if (this.contentOffsetY < 0) {
-            if (-this.contentOffsetY > topLoadContentOffset) {
+            // -contentOffsetY 偏移量
+            if (-contentOffsetY > topLoadContentOffset) {
                 this._PullDownRefresh();
+            } else {
+                this.flatListHeaderView.updateShowStatus(CZFlatListViewHeaderViewStatus.Initialization);
             }
         } else {
             if (this.footerStatus != CZFlatListViewFooterViewStatus.All) {
-                if (this.contentSizeHeight > this.totalHeight) {
+                if (contentSizeHeight > totalHeight) {
                     let bottomSpace = totalHeight + contentOffsetY - contentSizeHeight;
+                    //bottomSpace: 偏移量
                     if (bottomSpace > bottomLoadContentOffset) {
                         this._PullUpRefresh();
                     }
                 } else {
+                    // contentOffsetY 偏移量
                     if (this.contentOffsetY > bottomLoadContentOffset) {
                         this._PullUpRefresh();
                     }
                 }
             }
         }
+
     }
 
+    /*
+    * 滚动动画结束
+    * */
     _onMomentumScrollEnd = () => {
         this.updateFooterShowStatus();
     }
@@ -257,15 +275,12 @@ export default class CZFlatListView extends Component{
     }
 
     _renderListHeaderComponent = () => {
-        let ele = this.props.ListHeaderComponent();
-        if (!ele) return null;
+        let headerElement = this.props.ListHeaderComponent();
+        if (!headerElement) return null;
 
-        console.log('---------- log start ------');
-        console.log('_renderListHeaderComponent');
-        console.log('---------- log end ------');
         return (
             <View>
-                {ele}
+                {headerElement}
             </View>
         )
     }
@@ -274,15 +289,15 @@ export default class CZFlatListView extends Component{
    * 渲染底部视图
    * */
     _renderListFooterComponent = () => {
-        let ele = this.props.ListFooterComponent();
+        let footerElement = this.props.ListFooterComponent();
 
         const { bottomLoadContentOffset } = this;
         return (
             <View>
                 {
-                    ele ? (
+                    footerElement ? (
                         <View>
-                            {ele}
+                            {footerElement}
                         </View>
                     ) : null
                 }
