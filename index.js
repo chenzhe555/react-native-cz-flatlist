@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, FlatList, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, FlatList, PanResponder, Platform } from 'react-native';
 import { CZFlatListViewRequestStatus, CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus, CZFlatListViewScrollStatus } from './enum';
 import FlatListHeaderView from './FlatListHeaderView';
 import FlatListFooterView from './FlatListFooterView';
@@ -166,7 +166,7 @@ export default class CZFlatListView extends Component{
     * */
     _PullUpRefresh = () => {
         //如果正在请求，则不进行处理
-        if (this.requestStatus == CZFlatListViewRequestStatus.PullDown || this.requestStatus == CZFlatListViewRequestStatus.PullUp) return;
+        if (this.requestStatus == CZFlatListViewRequestStatus.PullDown || this.requestStatus == CZFlatListViewRequestStatus.PullUp || this.footerStatus == CZFlatListViewFooterViewStatus.All) return;
 
         if (this.props.loadMore) {
             this.requestStatus = CZFlatListViewRequestStatus.PullUp;
@@ -315,13 +315,9 @@ export default class CZFlatListView extends Component{
         const { backgroundColor = 'white'} = this.props;
         const { topLoadContentOffset } = this;
 
-        return (
-            <View style={[{flex: 1}]} onLayout={this._onLayout}>
-                <FlatListHeaderView
-                    evaluateView={ (flatListHeaderView) => {this.flatListHeaderView = flatListHeaderView} }
-                    backgroundColor={backgroundColor}
-                    topLoadContentOffset={topLoadContentOffset}
-                />
+        let flatList = null;
+        if (Platform.OS == 'ios') {
+            flatList = (
                 <FlatList
                     ref={(flatlist) => {this.flatlist = flatlist}}
                     style={[{ flex: 1, backgroundColor: backgroundColor}]}
@@ -329,14 +325,40 @@ export default class CZFlatListView extends Component{
                     renderItem={this._renderItem}
                     extraData={this.state}
                     keyExtractor={(item, index) => { return "flatListIndex" + index }}
+                    ListHeaderComponent={this._renderListHeaderComponent}
+                    ListFooterComponent={this._renderListFooterComponent}
                     onScroll={this._onScroll.bind(this)}
                     onContentSizeChange={this._onContentSizeChange}
                     onScrollBeginDrag={this._onScrollBeginDrag}
                     onScrollEndDrag={this._onScrollEndDrag}
                     onMomentumScrollEnd={this._onMomentumScrollEnd}
-                    ListHeaderComponent={this._renderListHeaderComponent}
-                    ListFooterComponent={this._renderListFooterComponent}
                 />
+            );
+        } else {
+            <FlatList
+                ref={(flatlist) => {this.flatlist = flatlist}}
+                style={[{ flex: 1, backgroundColor: backgroundColor}]}
+                data={list}
+                renderItem={this._renderItem}
+                extraData={this.state}
+                keyExtractor={(item, index) => { return "flatListIndex" + index }}
+                ListHeaderComponent={this._renderListHeaderComponent}
+                ListFooterComponent={this._renderListFooterComponent}
+                refreshing={false}
+                onRefresh={this._PullDownRefresh.bind(this)}
+                onEndReached={this._PullUpRefresh.bind(this)}
+                onEndReachedThroshold={0.01}
+            />
+        }
+
+        return (
+            <View style={[{flex: 1}]} onLayout={this._onLayout}>
+                <FlatListHeaderView
+                    evaluateView={ (flatListHeaderView) => {this.flatListHeaderView = flatListHeaderView} }
+                    backgroundColor={backgroundColor}
+                    topLoadContentOffset={topLoadContentOffset}
+                />
+                {flatList}
             </View>
         )
     }
