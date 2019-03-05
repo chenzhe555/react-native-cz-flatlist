@@ -335,20 +335,22 @@ export default class CZFlatListView extends Component{
                 />
             );
         } else {
-            <FlatList
-                ref={(flatlist) => {this.flatlist = flatlist}}
-                style={[{ flex: 1, backgroundColor: backgroundColor}]}
-                data={list}
-                renderItem={this._renderItem}
-                extraData={this.state}
-                keyExtractor={(item, index) => { return "flatListIndex" + index }}
-                ListHeaderComponent={this._renderListHeaderComponent}
-                ListFooterComponent={this._renderListFooterComponent}
-                refreshing={false}
-                onRefresh={this._PullDownRefresh.bind(this)}
-                onEndReached={this._PullUpRefresh.bind(this)}
-                onEndReachedThroshold={0.01}
-            />
+            flatList = (
+                <FlatList
+                    ref={(flatlist) => {this.flatlist = flatlist}}
+                    style={[{ flex: 1, backgroundColor: backgroundColor}]}
+                    data={list}
+                    renderItem={this._renderItem}
+                    extraData={this.state}
+                    keyExtractor={(item, index) => { return "flatListIndex" + index }}
+                    ListHeaderComponent={this._renderListHeaderComponent}
+                    ListFooterComponent={this._renderListFooterComponent}
+                    refreshing={false}
+                    onRefresh={this._PullDownRefresh.bind(this)}
+                    onEndReached={this._PullUpRefresh.bind(this)}
+                    onEndReachedThroshold={0.01}
+                />
+            );
         }
 
         return (
