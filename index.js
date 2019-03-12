@@ -18,6 +18,9 @@ import FlatListFooterView from './FlatListFooterView';
 * renderItem: 渲染Cell
 * refresh: 下拉刷新数据 callback({'fail': 1, 'list': [1,2,3]})
 * loadMore: 上拉加载数据
+* 
+* export func:
+* modifyDataList(list = []) 直接修改数据源
 * */
 export default class CZFlatListView extends Component{
 
@@ -137,6 +140,14 @@ export default class CZFlatListView extends Component{
     }
     /************************** 子组件回调方法 **************************/
     /************************** 外部调用方法 **************************/
+    /*
+    * 直接修改数据源
+    * */
+    modifyDataList(list = []) {
+        this.setState({
+            list: list
+        });
+    }
     /************************** List相关方法 **************************/
     /*
     * 渲染Cell
