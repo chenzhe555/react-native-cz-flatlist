@@ -19,6 +19,24 @@ import FlatListView from 'react-native-cz-flatlist';
 ```
 pageCount: 每页数量，默认20,是否加载完按照传入数量判断，如果数量不等于pageCount，则认为加载完
 ```
+```
+backgroundColor: 背景颜色，默认白色
+```
+```
+topLoadContentOffset: 顶部加载最大偏移量
+```
+```
+bottomLoadContentOffset: 底部加载最大偏移量
+```
+```
+ListHeaderComponent: 顶部组件
+```
+```
+ListFooterComponent: 底部组件
+```
+```
+ListEmptyComponent: 空数组视图
+```
 ###  3.属性方法:
 ```
 evaluateView: 赋值当前视图对象

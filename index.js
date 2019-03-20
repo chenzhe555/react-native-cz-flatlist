@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, PanResponder, Platform } from 'react-
 import { CZFlatListViewRequestStatus, CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus, CZFlatListViewScrollStatus } from './enum';
 import FlatListHeaderView from './FlatListHeaderView';
 import FlatListFooterView from './FlatListFooterView';
+import EmptyComponentView from './EmptyComponentView';
 
 /*
 * props:
@@ -12,6 +13,7 @@ import FlatListFooterView from './FlatListFooterView';
 * bottomLoadContentOffset: 底部加载最大偏移量
 * ListHeaderComponent: 顶部组件
 * ListFooterComponent: 底部组件
+* ListEmptyComponent: 空数组视图
 *
 * func:
 * evaluateView: 赋值当前视图对象
@@ -128,8 +130,10 @@ export default class CZFlatListView extends Component{
         if (this.allListCount == -1) return;
 
         if (this.allListCount == 0) {
+            this.emptyComponentView.modifyShowStatus(true);
             this.footerStatus = CZFlatListViewFooterViewStatus.Empty;
         } else {
+            this.emptyComponentView.modifyShowStatus(false);
             if (this.newListCount != this.pageCount) {
                 this.footerStatus = CZFlatListViewFooterViewStatus.All;
             } else {
@@ -285,6 +289,9 @@ export default class CZFlatListView extends Component{
         }
     }
 
+    /*
+    * 渲染头部视图
+    * */
     _renderListHeaderComponent = () => {
         let headerElement = this.props.ListHeaderComponent();
         if (!headerElement) return null;
@@ -297,8 +304,8 @@ export default class CZFlatListView extends Component{
     }
 
     /*
-   * 渲染底部视图
-   * */
+     * 渲染底部视图
+     * */
     _renderListFooterComponent = () => {
         let footerElement = this.props.ListFooterComponent();
 
@@ -323,7 +330,7 @@ export default class CZFlatListView extends Component{
 
     render() {
         const { list } = this.state;
-        const { backgroundColor = 'white'} = this.props;
+        const { backgroundColor = 'white', ListEmptyComponent = null} = this.props;
         const { topLoadContentOffset } = this;
 
         let flatList = null;
@@ -366,6 +373,7 @@ export default class CZFlatListView extends Component{
 
         return (
             <View style={[{flex: 1}]} onLayout={this._onLayout}>
+                <EmptyComponentView evaluateView={ (emptyComponentView) => {this.emptyComponentView = emptyComponentView} } emptyComponent={ListEmptyComponent}/>
                 <FlatListHeaderView
                     evaluateView={ (flatListHeaderView) => {this.flatListHeaderView = flatListHeaderView} }
                     backgroundColor={backgroundColor}
