@@ -35,7 +35,7 @@ ListHeaderComponent: 顶部组件
 ListFooterComponent: 底部组件
 ```
 ```
-ListEmptyComponent: 空数组视图
+ListCustomComponent: 自定义显示在顶部视图
 ```
 ###  3.属性方法:
 ```
@@ -72,7 +72,19 @@ loadMore: 上拉加载数据
 ###  4.供外部调用的方法:
 ```
 /*
-  * 直接修改数据源
+* 直接修改数据源
 * */
 modifyDataList(list = [])
+```
+```
+/*
+* 点击自定义视图刷新数据 1.显示下拉状态，隐藏空视图 2.显示下拉状态，不隐藏空视图
+* */
+refreshData(type = 1)
+```
+```
+/*
+* 修改自定义视图显示状态
+* */
+modifyCustomComponentStatus(show = false)
 ```

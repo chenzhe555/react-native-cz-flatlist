@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, PanResponder, Platform } from 'react-
 import { CZFlatListViewRequestStatus, CZFlatListViewPullStatus, CZFlatListViewHeaderViewStatus, CZFlatListViewFooterViewStatus, CZFlatListViewScrollStatus } from './enum';
 import FlatListHeaderView from './FlatListHeaderView';
 import FlatListFooterView from './FlatListFooterView';
-import EmptyComponentView from './EmptyComponentView';
+import CustomComponentView from './CustomComponentView';
 
 /*
 * props:
@@ -13,7 +13,7 @@ import EmptyComponentView from './EmptyComponentView';
 * bottomLoadContentOffset: 底部加载最大偏移量
 * ListHeaderComponent: 顶部组件
 * ListFooterComponent: 底部组件
-* ListEmptyComponent: 空数组视图
+* ListCustomComponent: 自定义显示在顶部视图
 *
 * func:
 * evaluateView: 赋值当前视图对象
@@ -23,6 +23,8 @@ import EmptyComponentView from './EmptyComponentView';
 * 
 * export func:
 * modifyDataList(list = []) 直接修改数据源
+* refreshData(type = 1) 点击自定义视图刷新数据 1.显示下拉状态，隐藏空视图 2.显示下拉状态，不隐藏空视图
+* modifyCustomComponentStatus 修改自定义视图显示状态
 * */
 export default class CZFlatListView extends Component{
 
@@ -130,10 +132,10 @@ export default class CZFlatListView extends Component{
         if (this.allListCount == -1) return;
 
         if (this.allListCount == 0) {
-            this.emptyComponentView.modifyShowStatus(true);
+            this.modifyCustomComponentStatus(true);
             this.footerStatus = CZFlatListViewFooterViewStatus.Empty;
         } else {
-            this.emptyComponentView.modifyShowStatus(false);
+            this.modifyCustomComponentStatus(false);
             if (this.newListCount != this.pageCount) {
                 this.footerStatus = CZFlatListViewFooterViewStatus.All;
             } else {
@@ -147,10 +149,32 @@ export default class CZFlatListView extends Component{
     /*
     * 直接修改数据源
     * */
-    modifyDataList(list = []) {
+    modifyDataList = (list = []) => {
         this.setState({
             list: list
         });
+    }
+
+    /*
+    * 点击自定义视图刷新数据
+    * 1.显示下拉状态，隐藏空视图
+    * 2.显示下拉状态，不隐藏空视图
+    * */
+    refreshData = (type = 1) => {
+        if (type == 1) {
+            this.modifyCustomComponentStatus(false);
+            this._PullDownRefresh();
+        } else if (type == 2) {
+            this.modifyCustomComponentStatus(true);
+            this._PullDownRefresh();
+        }
+    }
+
+    /*
+    * 修改自定义视图显示状态
+    * */
+    modifyCustomComponentStatus(show = false) {
+        this.customComponentView.modifyShowStatus(show);
     }
     /************************** List相关方法 **************************/
     /*
@@ -330,7 +354,7 @@ export default class CZFlatListView extends Component{
 
     render() {
         const { list } = this.state;
-        const { backgroundColor = 'white', ListEmptyComponent = null} = this.props;
+        const { backgroundColor = 'white', ListCustomComponent = null} = this.props;
         const { topLoadContentOffset } = this;
 
         let flatList = null;
@@ -373,7 +397,7 @@ export default class CZFlatListView extends Component{
 
         return (
             <View style={[{flex: 1}]} onLayout={this._onLayout}>
-                <EmptyComponentView evaluateView={ (emptyComponentView) => {this.emptyComponentView = emptyComponentView} } emptyComponent={ListEmptyComponent}/>
+                <CustomComponentView evaluateView={ (customComponentView) => {this.customComponentView = customComponentView} } customComponentView={ListCustomComponent}/>
                 <FlatListHeaderView
                     evaluateView={ (flatListHeaderView) => {this.flatListHeaderView = flatListHeaderView} }
                     backgroundColor={backgroundColor}

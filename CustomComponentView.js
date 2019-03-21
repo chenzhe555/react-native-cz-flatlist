@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, StyleSheet } from 'react-native';
 
-export default class EmptyComponentView extends Component {
+export default class CustomComponentView extends Component {
 
     /************************** 生命周期 **************************/
     constructor(props) {
@@ -41,11 +41,11 @@ export default class EmptyComponentView extends Component {
     /************************** Render中方法 **************************/
 
     render() {
-        if (!this.state.show || this.props.emptyComponent == null) return null;
+        if (!this.state.show || this.props.customComponentView == null) return null;
 
         return (
             <View style={[styles.MainView]}>
-                {this.props.emptyComponent}
+                {this.props.customComponentView}
             </View>
         )
     }
