@@ -318,7 +318,7 @@ export default class CZFlatListView extends Component{
     * 渲染头部视图
     * */
     _renderListHeaderComponent = () => {
-        let headerElement = this.props.ListHeaderComponent();
+        let headerElement = this.props.ListHeaderComponent && this.props.ListHeaderComponent();
         if (!headerElement) return null;
 
         return (
@@ -332,7 +332,7 @@ export default class CZFlatListView extends Component{
      * 渲染底部视图
      * */
     _renderListFooterComponent = () => {
-        let footerElement = this.props.ListFooterComponent();
+        let footerElement = this.props.ListFooterComponent && this.props.ListFooterComponent();
         const { footerViewBottomSpace = 12 } = this.props;
 
         const { bottomLoadContentOffset } = this;
