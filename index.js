@@ -14,6 +14,7 @@ import CustomComponentView from './CustomComponentView';
 * ListHeaderComponent: 顶部组件
 * ListFooterComponent: 底部组件
 * ListCustomComponent: 自定义显示在顶部视图
+* footerViewBottomSpace: 底部视图文字距离底部高度,默认12
 *
 * func:
 * evaluateView: 赋值当前视图对象
@@ -332,6 +333,7 @@ export default class CZFlatListView extends Component{
      * */
     _renderListFooterComponent = () => {
         let footerElement = this.props.ListFooterComponent();
+        const { footerViewBottomSpace = 12 } = this.props;
 
         const { bottomLoadContentOffset } = this;
         return (
@@ -346,6 +348,7 @@ export default class CZFlatListView extends Component{
                 <FlatListFooterView
                     evaluateView={ (flatListFooterView) => {this.flatListFooterView = flatListFooterView} }
                     bottomLoadContentOffset={bottomLoadContentOffset}
+                    footerViewBottomSpace={footerViewBottomSpace}
                 />
             </View>
         );

@@ -37,6 +37,9 @@ ListFooterComponent: 底部组件
 ```
 ListCustomComponent: 自定义显示在顶部视图
 ```
+```
+footerViewBottomSpace: 底部视图文字距离底部高度,默认12
+```
 ###  3.属性方法:
 ```
 evaluateView: 赋值当前视图对象

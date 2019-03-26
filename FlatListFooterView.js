@@ -68,6 +68,7 @@ export default class FlatListFooterView extends Component{
     /************************** Render中方法 **************************/
     render() {
         const { status, show } = this.state;
+        const { footerViewBottomSpace = 12 } = this.props;
         if (!show || status == CZFlatListViewFooterViewStatus.Initialization) return null;
 
         let animating = false;
@@ -93,7 +94,7 @@ export default class FlatListFooterView extends Component{
         }
 
         return (
-            <View style={[styles.MainView]}>
+            <View style={[styles.MainView, {height: (30 + footerViewBottomSpace)}]}>
                 <View style={[styles.ContentView]}>
                     {
                         animating ? (
